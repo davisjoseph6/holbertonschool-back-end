@@ -1,36 +1,32 @@
 #!/usr/bin/python3
 """
-Script to gather data from an API and display TODO list progress
-for a given employee ID.
+Using what you did in the task #0, extend your Python script to export data in the CSV format.
 """
 
 import csv
 import requests
-from sys import argv
+import sys
+
 
 if __name__ == "__main__":
-    if len(argv) != 2 or not argv[1].isdigit():
-        print("Usage: {} employee_id".format(argv[0]))
-    else:
-        employee_id = int(argv[1])
+    if len(sys.argv) != 2:
+        print(f"missing employee id as argument")
+        sys.exit(1)
 
-        # Fetch user information
-        user_url = "https://jsonplaceholder.typicode.com/users/{}".format(employee_id)
-        user_response = requests.get(user_url)
-        user_data = user_response.json()
-        employee_name = user_data.get("name")
+    URL = "https://jsonplaceholder.typicode.com"
+    EMPLOYEE_ID = sys.argv[1]
 
-        # Fetch TODO list
-        todo_url = "https://jsonplaceholder.typicode.com/todos?userId={}".format(employee_id)
-        todo_response = requests.get(todo_url)
-        todo_data = todo_response.json()
+    EMPLOYEE_TODOS = requests.get(f"{URL}/users/{EMPLOYEE_ID}/todos",
+                                  params={"_expand": "user"})
+    data = EMPLOYEE_TODOS.json()
 
-        # Calculate TODO list progress
-        total_tasks = len(todo_data)
-        completed_tasks = sum(task["completed"] for task in todo_data)
+    EMPLOYEE_NAME = data[0]["user"]["username"]
+    fileName = f"{EMPLOYEE_ID}.csv"
 
-        # Display information
-        print("Employee {} is done with tasks({}/{}):".format(employee_name, completed_tasks, total_tasks))
-        for task in todo_data:
-            if task["completed"]:
-                print("\t {}".format(task["title"]))
+    with open(fileName, "w", newline="") as file:
+        writer = csv.writer(file, quoting=csv.QUOTE_NONNUMERIC)
+        for task in data:
+            writer.writerow(
+                [EMPLOYEE_ID, EMPLOYEE_NAME, str(task["completed"]),
+                 task["title"]]
+            )
